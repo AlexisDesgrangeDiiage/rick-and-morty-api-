@@ -27,6 +27,7 @@ import org.mathieu.cleanrmapi.domain.models.episode.Episode
  * @property locationId The current location id.
  * @property image URL pointing to the character's avatar image.
  * @property created Timestamp indicating when the character entity was created in the database.
+ *  @property episode A list of episodes the character appears in.
  */
 internal class CharacterObject: RealmObject {
     @PrimaryKey

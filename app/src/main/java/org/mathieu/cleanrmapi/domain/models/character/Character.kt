@@ -14,6 +14,7 @@ import org.mathieu.cleanrmapi.domain.models.episode.Episode
  * @property origin The origin location of the character, represented as a name and an id of location.
  * @property location The current or last known location of the character, represented as a name and an id of location.
  * @property avatarUrl A URL pointing to an avatar or image of the character.
+ * @property episodes A List of Episode object where the character appear in the show
  */
 data class Character(
     val id: Int,

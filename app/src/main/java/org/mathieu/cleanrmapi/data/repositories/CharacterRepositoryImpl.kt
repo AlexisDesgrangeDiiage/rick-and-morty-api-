@@ -29,6 +29,19 @@ internal class CharacterRepositoryImpl(
     private val characterLocal: CharacterLocal
 ) : CharacterRepository {
 
+    /**
+     * Fetches characters from local storage and enriches them with episode details from a remote API.
+     *
+     * Steps:
+     * 1. Retrieve characters from the local database.
+     * 2. For each character, extract episode URLs and fetch episode details from the remote API.
+     * 3. Transform each episode's response into an Episode model and compile a list for each character.
+     * 4. Map each character to a new Character model, including the compiled list of episodes.
+     * 5. Return a Flow of the enriched list of characters.
+     *
+     * @return A Flow emitting a List<Character>, where each Character includes detailed information about episodes they appear in.
+     */
+
     override suspend fun getCharacters(): Flow<List<Character>> {
         return characterLocal
             .getCharacters().map { list ->
