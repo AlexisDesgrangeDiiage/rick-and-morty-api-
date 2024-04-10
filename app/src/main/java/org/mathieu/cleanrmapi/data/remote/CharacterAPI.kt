@@ -6,6 +6,7 @@ import io.ktor.client.request.get
 import io.ktor.client.request.parameter
 import io.ktor.http.HttpStatusCode
 import org.mathieu.cleanrmapi.data.remote.responses.CharacterResponse
+import org.mathieu.cleanrmapi.data.remote.responses.EpisodeResponse
 import org.mathieu.cleanrmapi.data.remote.responses.PaginatedResponse
 
 internal class CharacterApi(private val client: HttpClient) {
@@ -41,4 +42,9 @@ internal class CharacterApi(private val client: HttpClient) {
         .accept(HttpStatusCode.OK)
         .body()
 
+    // Dans CharacterApi
+    suspend fun getEpisodeByUrl(id: Int): EpisodeResponse = client
+        .get("episode/$id")
+        .accept(HttpStatusCode.OK)
+        .body()
 }

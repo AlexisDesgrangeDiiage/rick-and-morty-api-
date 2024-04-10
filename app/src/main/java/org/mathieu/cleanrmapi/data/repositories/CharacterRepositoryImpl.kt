@@ -8,12 +8,12 @@ import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.map
 import org.mathieu.cleanrmapi.data.local.CharacterLocal
-import org.mathieu.cleanrmapi.data.local.objects.CharacterObject
 import org.mathieu.cleanrmapi.data.local.objects.toModel
 import org.mathieu.cleanrmapi.data.local.objects.toRealmObject
 import org.mathieu.cleanrmapi.data.remote.CharacterApi
 import org.mathieu.cleanrmapi.data.remote.responses.CharacterResponse
 import org.mathieu.cleanrmapi.domain.models.character.Character
+import org.mathieu.cleanrmapi.domain.models.episode.Episode
 import org.mathieu.cleanrmapi.domain.repositories.CharacterRepository
 
 private const val CHARACTER_PREFS = "character_repository_preferences"
@@ -29,11 +29,28 @@ internal class CharacterRepositoryImpl(
     private val characterLocal: CharacterLocal
 ) : CharacterRepository {
 
-    override suspend fun getCharacters(): Flow<List<Character>> =
-        characterLocal
-            .getCharacters()
-            .mapElement(transform = CharacterObject::toModel)
-            .also { if (it.first().isEmpty()) fetchNext() }
+    override suspend fun getCharacters(): Flow<List<Character>> {
+        return characterLocal
+            .getCharacters().map { list ->
+                list.map { element ->
+                    val episodesUrl = element.episode
+                    val episodes: MutableList<Episode> = mutableListOf()
+                    for(episodeUrl in episodesUrl) {
+                        val episode = characterApi.getEpisodeByUrl(episodeUrl.substringAfterLast("/").toInt())
+                        episodes.add(Episode(
+                            id = episode.id,
+                            name = episode.name,
+                            airDate = episode.air_date,
+                            episode = episode.episode,
+                            characters = episode.characters,
+                            url = episode.url,
+                            created = episode.created
+                        ))
+                    }
+                    element.toModel(episodes)
+                }
+            }
+    }
 
 
     /**
@@ -84,14 +101,36 @@ internal class CharacterRepositoryImpl(
      * @return The [Character] object representing the character details.
      * @throws Exception If the character cannot be found both locally and via the API.
      */
-    override suspend fun getCharacter(id: Int): Character =
-        characterLocal.getCharacter(id)?.toModel()
-            ?: characterApi.getCharacter(id = id)?.let { response ->
+    override suspend fun getCharacter(id: Int): Character {
+        val char = characterLocal.getCharacter(id)
+
+        if (char != null) {
+            val episodesUrl = char.episode
+            val episodes: MutableList<Episode> = mutableListOf()
+            for (episodeUrl in episodesUrl) {
+                val episode = characterApi.getEpisodeByUrl(episodeUrl.substringAfterLast("/").toInt())
+                episodes.add(
+                    Episode(
+                        id = episode.id,
+                        name = episode.name,
+                        airDate = episode.air_date,
+                        episode = episode.episode,
+                        characters = episode.characters,
+                        url = episode.url,
+                        created = episode.created
+                    )
+                )
+            }
+            return char.toModel(episodes)
+        } else {
+            characterApi.getCharacter(id = id)?.let { response ->
                 val obj = response.toRealmObject()
                 characterLocal.insert(obj)
-                obj.toModel()
             }
-            ?: throw Exception("Character not found.")
+            return getCharacter(id)
+
+        }
+    }
 
 
 }
